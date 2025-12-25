@@ -1,0 +1,14 @@
+# Render Blueprint - Auto-deploy configuration
+services:
+  - type: web
+    name: aira-api
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: GOOGLE_API_KEY
+        sync: false  # Set manually in dashboard
+      - key: DB_PATH
+        value: data/aira.db
+    autoDeploy: true
+    healthCheckPath: /health
