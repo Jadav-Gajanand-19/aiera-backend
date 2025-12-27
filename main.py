@@ -113,24 +113,39 @@ async def chat(request: ChatRequest):
         run_response = agent.run(request.message)
         
         # Extract text from RunResponse
-        # RunResponse has a 'content' attribute with the text
         response_text = ""
+        
+        logger.info(f"Run response type: {type(run_response)}")
+        
         if run_response is not None:
+            # Check for content attribute first
             if hasattr(run_response, 'content') and run_response.content:
-                response_text = run_response.content
+                content = run_response.content
+                # Handle if content is a Response object (error case)
+                if hasattr(content, 'text'):
+                    response_text = content.text
+                elif isinstance(content, str):
+                    response_text = content
+                else:
+                    response_text = str(content)
+            # Check for messages attribute
             elif hasattr(run_response, 'messages') and run_response.messages:
-                # Get the last assistant message
                 for msg in reversed(run_response.messages):
                     if hasattr(msg, 'content') and msg.content:
-                        response_text = msg.content
+                        content = msg.content
+                        if isinstance(content, str):
+                            response_text = content
+                        else:
+                            response_text = str(content)
                         break
             else:
                 response_text = str(run_response)
         
-        if not response_text:
+        # Filter out error-like responses
+        if not response_text or '<Response' in response_text or 'Error' in response_text:
             response_text = "I'm here with you. Would you like to share more?"
         
-        logger.info(f"Response sent for session {session_id[:8]}")
+        logger.info(f"Response sent for session {session_id[:8]}: {response_text[:50]}...")
         
         return ChatResponse(
             response=response_text,
