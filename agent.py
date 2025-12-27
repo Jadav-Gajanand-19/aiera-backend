@@ -10,13 +10,24 @@ from agno.db.sqlite import SqliteDb
 import os
 
 
-def create_agent(user_id: str, session_id: str) -> Agent:
+# Language display names
+LANGUAGE_NAMES = {
+    'en': 'English',
+    'hi': 'Hindi (हिंदी)',
+    'te': 'Telugu (తెలుగు)',
+    'ta': 'Tamil (தமிழ்)',
+    'kn': 'Kannada (ಕನ್ನಡ)',
+}
+
+
+def create_agent(user_id: str, session_id: str, language: str = "en") -> Agent:
     """
     Factory function to create Aira agent instances.
     
     Args:
         user_id: Unique identifier for the user
         session_id: Conversation session identifier
+        language: Response language code (en, hi, te, ta, kn)
     
     Returns:
         Configured Agent instance
@@ -28,12 +39,21 @@ def create_agent(user_id: str, session_id: str) -> Agent:
     # Create SQLite database for session storage
     db = SqliteDb(db_file=db_path)
     
+    # Language instruction
+    lang_name = LANGUAGE_NAMES.get(language, 'English')
+    language_instruction = f"""
+    
+    IMPORTANT: You MUST respond in {lang_name}. 
+    The user may write in any language, but you should ALWAYS respond in {lang_name}.
+    If the language is Hindi, Telugu, Tamil, or Kannada, use the native script.
+    """ if language != 'en' else ""
+    
     return Agent(
         model=Gemini(id="gemini-2.0-flash"),
         db=db,
-        instructions=dedent("""\
+        instructions=dedent(f"""\
             You are Aira — a gentle, calm emotional support companion.
-            
+            {language_instruction}
             Your presence should feel like:
             - A quiet room with soft light
             - A slow breath during a stressful moment

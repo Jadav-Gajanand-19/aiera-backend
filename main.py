@@ -60,6 +60,7 @@ class ChatRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=5000, description="User's message")
     session_id: str | None = Field(None, description="Optional session ID for conversation continuity")
     user_id: str | None = Field(None, description="Optional user identifier")
+    language: str = Field("en", description="Response language code (en, hi, te, ta, kn)")
 
 
 class ChatResponse(BaseModel):
@@ -109,7 +110,7 @@ async def chat(request: ChatRequest):
             )
         
         # Create agent and get response
-        agent = create_agent(user_id=user_id, session_id=session_id)
+        agent = create_agent(user_id=user_id, session_id=session_id, language=request.language)
         run_response = agent.run(request.message)
         
         # Extract text from RunResponse
